@@ -113,3 +113,8 @@ Files are stored under `ProductAPI/wwwroot/uploads/products/` and image metadata
 ### 🧪 CI verification
 
 The authoring environment does not have a .NET SDK or Docker. Tests have been added for variant reservations and image/variant API responses, but **no green CI run has been verified**. Check [GitHub Actions](https://github.com/1x4x/2000-product-webapi/actions) before relying on the changes.
+
+
+### 🛠️ CI diagnostics
+
+The GitHub Actions workflow saves restore, build, unit-test and integration-test console logs as artifacts even when the job fails. Review the latest workflow run's **test-results** artifact to identify any compilation or runtime failures. No passing run has been confirmed.

@@ -6,24 +6,24 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 20\n    defaults:\n      run:\n        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
       - name: Restore
-        run: dotnet restore ProductAPI.sln
+        run: set -o pipefail; dotnet restore ProductAPI.sln --verbosity normal 2>&1 | tee restore.log
       - name: Build
-        run: dotnet build ProductAPI.sln --no-restore --configuration Release
+        run: set -o pipefail; dotnet build ProductAPI.sln --no-restore --configuration Release --verbosity normal 2>&1 | tee build.log
       - name: Unit tests
-        run: dotnet test ProductAPI.Tests.Unit/ProductAPI.Tests.Unit.csproj --no-build --configuration Release --logger "trx;LogFileName=unit.trx" --results-directory TestResults
+        run: set -o pipefail; dotnet test ProductAPI.Tests.Unit/ProductAPI.Tests.Unit.csproj --no-build --configuration Release --logger "trx;LogFileName=unit.trx" --results-directory TestResults 2>&1 | tee unit.log
       - name: Integration tests (Docker/MySQL)
-        run: dotnet test ProductAPI.Tests.Integration/ProductAPI.Tests.Integration.csproj --no-build --configuration Release --logger "trx;LogFileName=integration.trx" --results-directory TestResults
+        run: dotnet test ProductAPI.Tests.Integration/ProductAPI.Tests.Integration.csproj --no-build --configuration Release --logger "trx;LogFileName=integration.trx" --results-directory TestResults 2>&1 | tee integration.log
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: TestResults/*.trx
+          path: |\n            TestResults/*.trx\n            *.log
           if-no-files-found: ignore
