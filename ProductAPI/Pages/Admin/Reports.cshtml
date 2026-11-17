@@ -1,0 +1,13 @@
+@page "/admin/reports"
+@model ProductAPI.Pages.Admin.ReportsModel
+<h1>Reports &amp; analytics</h1>
+<p class="muted">Live figures from inventory, reseller orders and purchase orders. Revenue represents recorded order values, not collected payments.</p>
+<div class="cards">
+<div class="card"><div class="muted">Catalog products</div><div class="number">@Model.ProductCount</div></div>
+<div class="card"><div class="muted">Inventory value (purchase cost)</div><div class="number">@Model.InventoryValue.ToString("N2")</div></div>
+<div class="card"><div class="muted">Recorded reseller order value</div><div class="number">@Model.OrderValue.ToString("N2")</div></div>
+<div class="card"><div class="muted">Open purchase orders</div><div class="number">@Model.OpenPurchaseOrders</div></div>
+</div>
+<div class="card"><h2>Top ordered products</h2><table><thead><tr><th>Product</th><th>Units ordered</th><th>Order value</th></tr></thead><tbody>
+@foreach(var row in Model.TopProducts){<tr><td>@row.Sku · @row.Name</td><td>@row.Quantity</td><td>@row.Value.ToString("N2")</td></tr>}
+</tbody></table></div>

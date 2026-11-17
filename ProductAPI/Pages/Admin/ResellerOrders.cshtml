@@ -1,0 +1,16 @@
+@page "/admin/reseller-orders"
+@model ProductAPI.Pages.Admin.ResellerOrdersModel
+<h1>Reseller orders &amp; fulfillment</h1>
+@if(Model.Error!=""){<p class="error">@Model.Error</p>}
+<div class="card"><table><thead><tr><th>Order</th><th>Reseller</th><th>Created</th><th>Status</th><th>Items</th><th>Actions</th></tr></thead><tbody>
+@foreach(var o in Model.Orders){<tr><td>#@o.Id</td><td>@o.Reseller.Name</td><td>@o.CreatedUtc.ToString("yyyy-MM-dd")</td><td>@o.Status</td>
+<td>@string.Join(", ",o.Items.Select(i=>$"{i.ProductId} × {i.Quantity}"))</td><td>
+@if(o.Status=="Pending"){
+<form method="post" asp-page-handler="Cancel" class="inline"><input type="hidden" name="id" value="@o.Id"/><button class="danger">Cancel / release stock</button></form>
+<form method="post" asp-page-handler="Ship">
+<input type="hidden" name="id" value="@o.Id"/>
+<input name="carrier" maxlength="120" placeholder="Carrier"/><input name="tracking" maxlength="120" placeholder="Tracking number"/>
+<button>Mark shipped</button></form>}
+@foreach(var s in o.Shipments){<div class="small">@s.Carrier · @s.TrackingNumber</div>}
+</td></tr>}
+</tbody></table></div>

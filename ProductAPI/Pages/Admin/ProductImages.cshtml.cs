@@ -131,6 +131,24 @@ public class ProductImagesModel(AppDbContext db, LocalProductImageStore store) :
         return RedirectToPage(new { id });
     }
 
+    public async Task<IActionResult> OnPostReorderAsync(int id, string order)
+    {
+        var ids = (order ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
+        if (ids.Length > ProductImagePolicy.MaxImages || ids.Any(x => !long.TryParse(x, out _)))
+            return BadRequest();
+        var parsed = ids.Select(long.Parse).ToArray();
+        if (parsed.Distinct().Count() != parsed.Length) return BadRequest();
+        await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+        var images = await db.ProductImages.Where(x => x.ProductId == id).ToListAsync();
+        if (parsed.Length != images.Count || images.Any(x => !parsed.Contains(x.Id)))
+            return BadRequest();
+        for (var i = 0; i < parsed.Length; i++)
+            images.Single(x => x.Id == parsed[i]).SortOrder = i;
+        await db.SaveChangesAsync();
+        await tx.CommitAsync();
+        return RedirectToPage(new { id });
+    }
+
     public async Task<IActionResult> OnPostDeleteAsync(int id, long imageId)
     {
         await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);

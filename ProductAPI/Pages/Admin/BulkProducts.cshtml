@@ -1,0 +1,11 @@
+@page "/admin/bulk-products"
+@model ProductAPI.Pages.Admin.BulkProductsModel
+<h1>Bulk product import / export</h1>
+<p class="muted">CSV import updates matching SKUs and creates missing products. It never overwrites stock quantities or reservations. Maximum 2 MB / 5,000 records.</p>
+@if(Model.Error!=""){<p class="error">@Model.Error</p>}
+@if(Model.Message!=""){<p class="ok">@Model.Message</p>}
+<div class="card"><h2>Export</h2><form method="post" asp-page-handler="Export"><button>Download product CSV</button></form></div>
+<div class="card"><h2>Import</h2><p>Expected columns: <code>@ProductAPI.Services.ProductCsvService.Header</code></p>
+<form method="post" asp-page-handler="Import" enctype="multipart/form-data">
+<input type="file" name="file" accept=".csv,text/csv" required/><button>Import CSV</button>
+</form></div>

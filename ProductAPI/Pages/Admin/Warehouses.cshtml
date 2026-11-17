@@ -1,0 +1,15 @@
+@page "/admin/warehouses"
+@model ProductAPI.Pages.Admin.WarehousesModel
+<h1>Warehouses &amp; stock locations</h1>
+@if(Model.Error!=""){<p class="error">@Model.Error</p>}
+<div class="card"><h2>Add warehouse</h2><form method="post" asp-page-handler="Create">
+<label>Code<input name="code" maxlength="80" required/></label><label>Name<input name="name" maxlength="120" required/></label>
+<label>Address<input name="address" maxlength="255"/></label><button>Create</button></form></div>
+<div class="card"><h2>Record warehouse stock</h2><p class="muted">Enter an absolute stock count for a location; total product stock is not automatically recalculated by this initial location ledger.</p>
+<form method="post" asp-page-handler="Stock">
+<label>Warehouse<select name="warehouseId">@foreach(var w in Model.Warehouses){<option value="@w.Id">@w.Code · @w.Name</option>}</select></label>
+<label>Product<select name="productId">@foreach(var p in Model.Products){<option value="@p.Id">@p.Sku · @p.Name</option>}</select></label>
+<label>Bin<input name="bin" maxlength="80"/></label><label>Quantity<input type="number" name="quantity" min="0" required/></label><button>Save location count</button></form></div>
+<div class="card"><h2>Locations</h2><table><thead><tr><th>Warehouse</th><th>Product</th><th>Bin</th><th>Quantity</th></tr></thead><tbody>
+@foreach(var s in Model.Stocks){<tr><td>@s.Warehouse.Code</td><td>@s.Product.Sku</td><td>@s.Bin</td><td>@s.Quantity</td></tr>}
+</tbody></table></div>
