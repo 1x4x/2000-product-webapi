@@ -1,0 +1,3 @@
+@page
+@model ProductAPI.Pages.LoginModel
+<h1>Administrator sign in</h1><div class="card"><form method="post"><label>Username <input name="Username" required autocomplete="username"/></label><label>Password <input name="Password" type="password" required autocomplete="current-password"/></label><button>Sign in</button></form><p class="error">@Model.Error</p></div>

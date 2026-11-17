@@ -1,0 +1,16 @@
+# Build outputs and local environment
+**/bin/
+**/obj/
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.rsuser
+**/appsettings.Development.json
+**/appsettings.Production.json
+.env
+.env.*
+!.env.example
+**/secrets.json
+**/TestResults/

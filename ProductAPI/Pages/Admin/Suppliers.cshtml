@@ -1,0 +1,12 @@
+@page "/admin/suppliers"
+@model ProductAPI.Pages.Admin.SuppliersModel
+<h1>Suppliers</h1><p class="muted">Manage sourcing contacts and typical shipping lead times.</p>
+<div class="card"><h2>Add or update supplier</h2><form method="post" asp-page-handler="Save" class="gridform">
+<label>Supplier ID (0 = new)<input asp-for="Input.Id" type="number" min="0"/></label>
+<label>Company name<input asp-for="Input.Name" required maxlength="200"/></label>
+<label>Contact name<input asp-for="Input.ContactName"/></label>
+<label>Email<input asp-for="Input.Email" type="email"/></label>
+<label>Country<input asp-for="Input.Country"/></label>
+<label>Lead time (days)<input asp-for="Input.LeadTimeDays" type="number" min="0" max="3650"/></label>
+<label>Notes<textarea asp-for="Input.Notes" rows="2"></textarea></label><div><button>Save supplier</button></div></form><p class="error">@Model.Error</p></div>
+<div class="card"><h2>Existing suppliers</h2><table><thead><tr><th>ID</th><th>Name</th><th>Contact</th><th>Country</th><th>Lead time</th></tr></thead><tbody>@foreach(var x in Model.Items){<tr><td>@x.Id</td><td>@x.Name</td><td>@x.Email</td><td>@x.Country</td><td>@x.LeadTimeDays days</td></tr>}</tbody></table><p class="muted small">Enter an existing supplier ID in the form to update it.</p></div>
