@@ -56,3 +56,8 @@ GitHub Actions workflow: `.github/workflows/tests.yml`. It restores, builds, run
 - Add parallel order stress tests, cancellation/reservation release tests, and idempotency tests for stock receipts.
 - Add migration-from-existing-schema tests once migrations are committed.
 - The API currently returns `Unauthorized` for insufficient scopes; consider `Forbidden` for authenticated tokens without permission.
+
+
+### Product image tests
+
+Unit tests validate the 20-image limit, allowed file signatures and maximum file size. An EF InMemory persistence test covers image-to-product relationships. Add end-to-end upload, deletion, file validation and MySQL concurrency tests before production deployment.

@@ -10,6 +10,7 @@ var connection=builder.Configuration.GetConnectionString("DefaultConnection");
 if(string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException("Set ConnectionStrings__DefaultConnection via user secrets or environment variables.");
 builder.Services.AddDbContext<AppDbContext>(o=>o.UseMySql(connection,ServerVersion.AutoDetect(connection)));
 builder.Services.AddScoped<ApiKeyService>();
+builder.Services.AddScoped<LocalProductImageStore>();
 builder.Services.AddRazorPages(o=>o.Conventions.AuthorizeFolder("/Admin"));
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(o=>{o.LoginPath="/Login";o.Cookie.HttpOnly=true;o.Cookie.SecurePolicy=CookieSecurePolicy.Always;o.Cookie.SameSite=SameSiteMode.Strict;o.ExpireTimeSpan=TimeSpan.FromHours(8);});
 builder.Services.AddAuthorization(); builder.Services.AddAntiforgery();
@@ -21,7 +22,7 @@ app.MapGet("/",()=>Results.Redirect("/admin"));
 var api=app.MapGroup("/api/v1").RequireRateLimiting("api");
 api.MapGet("/products",async(HttpContext http,AppDbContext db,ApiKeyService keys)=>{
  var key=await keys.Validate(http.Request.Headers["X-API-Key"],"products:read");if(key==null)return Results.Unauthorized();
- return Results.Ok(await db.Products.AsNoTracking().Where(p=>p.Active).Select(p=>new {p.Id,p.Sku,p.Name,p.Description,p.CategoryId,p.RetailPrice,p.ResellerPrice,p.Currency,AvailableQuantity=p.StockQuantity-p.ReservedQuantity}).ToListAsync());
+ return Results.Ok(await db.Products.AsNoTracking().Where(p=>p.Active).Select(p=>new {p.Id,p.Sku,p.Name,p.Description,p.CategoryId,p.RetailPrice,p.ResellerPrice,p.Currency,AvailableQuantity=p.StockQuantity-p.ReservedQuantity,PrimaryImageUrl=p.Images.Where(i=>i.IsPrimary).Select(i=>i.ImageUrl).FirstOrDefault(),Images=p.Images.OrderBy(i=>i.SortOrder).Select(i=>new{i.ImageUrl,i.AltText,i.IsPrimary,i.SortOrder}).ToList()}).ToListAsync());
 });
 api.MapGet("/products/{id:int}",async(int id,HttpContext http,AppDbContext db,ApiKeyService keys)=>{
  var key=await keys.Validate(http.Request.Headers["X-API-Key"],"products:read");if(key==null)return Results.Unauthorized();

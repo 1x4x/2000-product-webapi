@@ -1,4 +1,3 @@
-# Build outputs and local environment
 **/bin/
 **/obj/
 .vs/
@@ -14,3 +13,5 @@
 !.env.example
 **/secrets.json
 **/TestResults/
+**/wwwroot/uploads/products/*
+!**/wwwroot/uploads/products/.gitkeep

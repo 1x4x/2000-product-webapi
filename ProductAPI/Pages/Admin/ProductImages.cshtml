@@ -1,0 +1,30 @@
+@page "/admin/products/{id:int}/images"
+@model ProductAPI.Pages.Admin.ProductImagesModel
+<h1>Images for @Model.Product.Name</h1>
+<p><a href="/admin/products">← Back to products</a></p>
+<p class="muted">Upload up to 20 JPEG, PNG or WebP images per product. Maximum 5 MB each. The first image becomes primary automatically.</p>
+@if(!string.IsNullOrWhiteSpace(Model.Error)){<p class="error">@Model.Error</p>}
+<div class="card">
+<h2>Upload images (@Model.Images.Count / 20)</h2>
+<form method="post" asp-page-handler="Upload" enctype="multipart/form-data">
+<input type="file" name="files" accept="image/jpeg,image/png,image/webp" multiple required/>
+<button>Upload</button>
+</form>
+</div>
+<div class="card">
+<h2>Gallery</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px">
+@foreach(var img in Model.Images){
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:12px">
+<img src="@img.ImageUrl" alt="@img.AltText" loading="lazy" style="width:100%;height:155px;object-fit:contain"/>
+<p>@(img.IsPrimary?"⭐ Primary image":$"Position {img.SortOrder+1}")</p>
+<form method="post" asp-page-handler="Alt"><input type="hidden" name="imageId" value="@img.Id"/><input name="altText" value="@img.AltText" maxlength="255" placeholder="Alt text"/><button>Save text</button></form>
+<div class="actions">
+@if(!img.IsPrimary){<form method="post" asp-page-handler="Primary"><input type="hidden" name="imageId" value="@img.Id"/><button>Make primary</button></form>}
+<form method="post" asp-page-handler="Move"><input type="hidden" name="imageId" value="@img.Id"/><input type="hidden" name="direction" value="-1"/><button>↑</button></form>
+<form method="post" asp-page-handler="Move"><input type="hidden" name="imageId" value="@img.Id"/><input type="hidden" name="direction" value="1"/><button>↓</button></form>
+<form method="post" asp-page-handler="Delete"><input type="hidden" name="imageId" value="@img.Id"/><button class="danger">Delete</button></form>
+</div>
+</div>}
+</div>
+</div>

@@ -26,6 +26,7 @@ Inventory management, reseller API tokens, supplier purchasing and stock alerts 
 | 🚢 Purchasing | Draft orders, placed orders, partial/final receiving |
 | 🤝 Resellers | Company accounts and inventory reservations |
 | 🔑 API access | Hashed tokens, scopes, expiry and revocation |
+| 🖼️ Product images | Up to 20 JPEG, PNG or WebP files per product on local disk; primary image, ordering and alt text |
 | 🧪 Testing | xUnit unit tests and Docker/MySQL API integration tests |
 
 ## 🚢 Supplier replenishment
@@ -91,3 +92,12 @@ Integration tests use a disposable MySQL 8 container and require Docker. See **[
 Before production: compile and run the full suite, review database migrations, use HTTPS, move secrets into secure configuration, replace admin password hashing, add MFA and rate limits for login, test parallel orders and receipt idempotency, and review reseller authorization and audit logging.
 
 **Never commit the MySQL root password or reseller tokens to this public repository.**
+
+
+## 🖼️ Product images (local disk)
+
+Open **Products → Manage images** or visit `/admin/products/{id}/images`. Upload up to **20 images per product**, maximum **5 MB each**. Supported formats: JPEG, PNG, WebP. The page supports primary-image selection, ordering, alt text and deletion. The reseller product API returns `primaryImageUrl` and an `images` gallery.
+
+Files are stored under `ProductAPI/wwwroot/uploads/products/` and image metadata is stored in the MySQL `productimage` table. **The upload folder must be writable and backed up**, and should be on a persistent volume if deploying in containers. URLs are public static assets; do not upload private images. Files are identified by generated random names. Configure a reverse-proxy request-size limit and image processing/antivirus scanning before production.
+
+**Schema update:** After pulling the changes, run `dotnet ef migrations add AddProductImages` and `dotnet ef database update` from the `ProductAPI` directory, retaining your existing migration history. The repository does not contain generated migrations.
