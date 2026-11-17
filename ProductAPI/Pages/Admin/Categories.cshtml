@@ -1,0 +1,25 @@
+@page "/admin/categories"
+@model ProductAPI.Pages.Admin.CategoriesModel
+<h1>Product categories</h1>
+<p class="muted">Organize products into categories. Categories with products cannot be deleted until those products are reassigned.</p>
+@if(!string.IsNullOrWhiteSpace(Model.Error)){<p class="error">@Model.Error</p>}
+<div class="card">
+<h2>@(Model.EditId.HasValue?"Edit category":"Create category")</h2>
+<form method="post" asp-page-handler="Save">
+<input type="hidden" name="id" value="@(Model.EditId??0)"/>
+<label>Category name <input name="name" value="@Model.EditName" maxlength="120" required/></label>
+<button>Save category</button>
+@if(Model.EditId.HasValue){<a href="/admin/categories">Cancel</a>}
+</form>
+</div>
+<div class="card">
+<h2>All categories</h2>
+<table><thead><tr><th>ID</th><th>Category</th><th>Products</th><th>Actions</th></tr></thead><tbody>
+@foreach(var c in Model.Categories){
+<tr><td>@c.Id</td><td>@c.Name</td><td>@c.Products.Count</td><td>
+<a href="/admin/categories?editId=@c.Id">Edit</a>
+@if(c.Products.Count==0){<form method="post" asp-page-handler="Delete" class="inline"><input type="hidden" name="id" value="@c.Id"/><button class="danger">Delete</button></form>}
+else{<span class="muted">In use</span>}
+</td></tr>}
+</tbody></table>
+</div>
