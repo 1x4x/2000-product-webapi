@@ -16,7 +16,7 @@ public class ReportsModel(AppDbContext db) : PageModel
     public async Task OnGetAsync()
     {
         ProductCount = await db.Products.CountAsync();
-        InventoryValue = await db.Products.Select(x => x.PurchasePrice * x.StockQuantity).SumAsync();
+        InventoryValue = await db.Products.SumAsync(x => x.PurchasePrice * x.StockQuantity) + await (from v in db.ProductVariants join p in db.Products on v.ProductId equals p.Id select p.PurchasePrice * v.StockQuantity).SumAsync();
         OrderValue = await db.ResellerOrderItems.Select(x => x.UnitPrice * x.Quantity).SumAsync();
         OpenPurchaseOrders = await db.PurchaseOrders.CountAsync(x =>
             x.Status == "Draft" || x.Status == "Ordered" || x.Status == "PartiallyReceived");

@@ -166,4 +166,50 @@ public sealed class ApiIntegrationTests : IAsyncLifetime
         using var response = await _client.SendAsync(req);
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
+    [Fact]
+    public async Task VariantOrder_ReservesVariantWithoutReservingParent()
+    {
+        int variantId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var variant = new ProductVariant
+            {
+                ProductId = _productId, Sku = "INTEGRATION-001-BLACK",
+                Color = "Black", StockQuantity = 5, ResellerPrice = 15m
+            };
+            db.ProductVariants.Add(variant);
+            await db.SaveChangesAsync();
+            variantId = variant.Id;
+        }
+        using var request = Request(HttpMethod.Post, "/api/v1/orders", _resellerKey);
+        request.Content = JsonContent.Create(new { Items = new[] { new { ProductId = _productId, ProductVariantId = variantId, Quantity = 4 } } });
+        using var response = await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        using var scope2 = _factory.Services.CreateScope();
+        var verify = scope2.ServiceProvider.GetRequiredService<AppDbContext>();
+        Assert.Equal(4, (await verify.ProductVariants.SingleAsync()).ReservedQuantity);
+        Assert.Equal(0, (await verify.Products.SingleAsync()).ReservedQuantity);
+        Assert.Equal(variantId, (await verify.ResellerOrderItems.SingleAsync()).ProductVariantId);
+    }
+
+    [Fact]
+    public async Task ProductDetail_IncludesGalleryAndVariants()
+    {
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.ProductVariants.Add(new ProductVariant { ProductId = _productId, Sku = "INTEGRATION-001-S", Size = "S" });
+            db.ProductImages.Add(new ProductImage { ProductId = _productId, FileName = "test.jpg",
+                ImageUrl = "/uploads/products/test.jpg", IsPrimary = true });
+            await db.SaveChangesAsync();
+        }
+        using var request = Request(HttpMethod.Get, $"/api/v1/products/{_productId}", _resellerKey);
+        using var response = await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var json = await response.Content.ReadAsStringAsync();
+        Assert.Contains("INTEGRATION-001-S", json);
+        Assert.Contains("/uploads/products/test.jpg", json);
+    }
+
 }

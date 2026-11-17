@@ -6,7 +6,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options):DbContext(opti
  protected override void OnModelCreating(ModelBuilder b) {
   b.Entity<Product>().ToTable("product").HasIndex(x=>x.Sku).IsUnique(); b.Entity<ProductCategory>().ToTable("productcategory");
   b.Entity<Product>().Property(x=>x.PurchasePrice).HasPrecision(18,2); b.Entity<Product>().Property(x=>x.RetailPrice).HasPrecision(18,2); b.Entity<Product>().Property(x=>x.ResellerPrice).HasPrecision(18,2);
-  b.Entity<ResellerOrderItem>().Property(x=>x.UnitPrice).HasPrecision(18,2); b.Entity<PurchaseOrderItem>().Property(x=>x.UnitCost).HasPrecision(18,2);
+  b.Entity<ResellerOrderItem>().Property(x=>x.UnitPrice).HasPrecision(18,2); b.Entity<ResellerOrderItem>().HasOne(x=>x.ProductVariant).WithMany().HasForeignKey(x=>x.ProductVariantId).OnDelete(DeleteBehavior.Restrict); b.Entity<PurchaseOrderItem>().Property(x=>x.UnitCost).HasPrecision(18,2);
   b.Entity<ApiKey>().HasIndex(x=>x.Hash).IsUnique();
   b.Entity<ProductVariant>().ToTable("productvariant").HasIndex(x=>x.Sku).IsUnique();
   b.Entity<ProductVariant>().HasOne(x=>x.Product).WithMany(x=>x.Variants).HasForeignKey(x=>x.ProductId).OnDelete(DeleteBehavior.Cascade);

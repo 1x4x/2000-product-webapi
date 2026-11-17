@@ -10,6 +10,15 @@
 <label>Warehouse<select name="warehouseId">@foreach(var w in Model.Warehouses){<option value="@w.Id">@w.Code · @w.Name</option>}</select></label>
 <label>Product<select name="productId">@foreach(var p in Model.Products){<option value="@p.Id">@p.Sku · @p.Name</option>}</select></label>
 <label>Bin<input name="bin" maxlength="80"/></label><label>Quantity<input type="number" name="quantity" min="0" required/></label><button>Save location count</button></form></div>
+<div class="card"><h2>Transfer between locations</h2>
+<p class="muted">Transfers move recorded stock without changing total inventory.</p>
+<form method="post" asp-page-handler="Transfer">
+<label>Source bin<select name="fromStockId">@foreach(var s in Model.Stocks){<option value="@s.Id">@s.Warehouse.Code · @s.Product.Sku · @(s.ProductVariant?.Sku??"Base") · @s.Bin (@s.Quantity)</option>}</select></label>
+<label>Destination warehouse<select name="toWarehouseId">@foreach(var w in Model.Warehouses){<option value="@w.Id">@w.Code</option>}</select></label>
+<label>Destination bin<input name="toBin" maxlength="80"/></label>
+<label>Quantity<input name="quantity" type="number" min="1" required/></label>
+<button>Transfer</button>
+</form></div>
 <div class="card"><h2>Locations</h2><table><thead><tr><th>Warehouse</th><th>Product</th><th>Bin</th><th>Quantity</th></tr></thead><tbody>
 @foreach(var s in Model.Stocks){<tr><td>@s.Warehouse.Code</td><td>@s.Product.Sku</td><td>@s.Bin</td><td>@s.Quantity</td></tr>}
 </tbody></table></div>

@@ -101,3 +101,15 @@ Open **Products → Manage images** or visit `/admin/products/{id}/images`. Uplo
 Files are stored under `ProductAPI/wwwroot/uploads/products/` and image metadata is stored in the MySQL `productimage` table. **The upload folder must be writable and backed up**, and should be on a persistent volume if deploying in containers. URLs are public static assets; do not upload private images. Files are identified by generated random names. Configure a reverse-proxy request-size limit and image processing/antivirus scanning before production.
 
 **Schema update:** After pulling the changes, run `dotnet ef migrations add AddProductImages` and `dotnet ef database update` from the `ProductAPI` directory, retaining your existing migration history. The repository does not contain generated migrations.
+
+
+### 🔄 Inventory consistency update
+
+- **Variant orders:** `POST /api/v1/orders` accepts an optional `ProductVariantId` per line. Variant orders reserve the selected variant's stock and price; base-product orders continue to use base stock. Shipping and cancellation update the same stock pool.
+- **Warehouse adjustments:** Recording a bin's absolute quantity applies the difference to the corresponding product/variant total. Transfers move quantities between bins without changing totals. Shipping reduces bin counts where recorded; any remainder comes from unallocated stock.
+- **Legacy inventory:** Existing product stock may not have a warehouse assignment. Review and reconcile legacy counts before adopting warehouse bin counts. Do not enter the full existing stock as a new bin adjustment without accounting for the resulting total increase.
+- **Remaining gaps:** No partial shipments, returns, picking reservations by warehouse, image compression, full variant/image CSV import, or end-to-end migrations. CI must pass before deployment.
+
+### 🧪 CI verification
+
+The authoring environment does not have a .NET SDK or Docker. Tests have been added for variant reservations and image/variant API responses, but **no green CI run has been verified**. Check [GitHub Actions](https://github.com/1x4x/2000-product-webapi/actions) before relying on the changes.

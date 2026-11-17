@@ -33,18 +33,34 @@ api.MapGet("/inventory",async Task<IResult>(HttpContext http,AppDbContext db,Api
 api.MapGet("/me",async(HttpContext http,ApiKeyService keys)=>{var key=await keys.Validate(http.Request.Headers["X-API-Key"],"products:read");return key==null?Results.Unauthorized():Results.Ok(new {key.Name,key.ResellerId,key.IsAdmin,key.ExpiresUtc,key.Scopes});});
 api.MapPost("/orders",async(CreateOrder request,HttpContext http,AppDbContext db,ApiKeyService keys)=>{
  var key=await keys.Validate(http.Request.Headers["X-API-Key"],"orders:create");if(key==null)return Results.Unauthorized();if(key.ResellerId==null)return Results.BadRequest("A reseller token is required.");
- if(request.Items==null||request.Items.Count==0||request.Items.Count>100||request.Items.Any(i=>i.Quantity<1||i.Quantity>10000)||request.Items.GroupBy(i=>i.ProductId).Any(g=>g.Count()>1))return Results.BadRequest("Invalid order items.");
+ if(request.Items==null||request.Items.Count==0||request.Items.Count>100||request.Items.Any(i=>i.Quantity<1||i.Quantity>10000)||request.Items.GroupBy(i=>new{i.ProductId,i.ProductVariantId}).Any(g=>g.Count()>1))return Results.BadRequest("Invalid order items.");
  // SERIALIZABLE transaction prevents overselling from concurrent order requests.
  await using var tx=await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
- var ids=request.Items.Select(i=>i.ProductId).ToArray();var products=await db.Products.Where(p=>ids.Contains(p.Id)&&p.Active).ToDictionaryAsync(p=>p.Id);
- foreach(var item in request.Items)if(!products.TryGetValue(item.ProductId,out var p)||p.StockQuantity-p.ReservedQuantity<item.Quantity)return Results.Conflict("Insufficient stock or unavailable product.");
+ var ids=request.Items.Select(i=>i.ProductId).ToArray();
+ var products=await db.Products.Where(p=>ids.Contains(p.Id)&&p.Active).ToDictionaryAsync(p=>p.Id);
+ var variantIds=request.Items.Where(i=>i.ProductVariantId.HasValue).Select(i=>i.ProductVariantId!.Value).ToArray();
+ var variants=await db.ProductVariants.Where(v=>variantIds.Contains(v.Id)&&v.Active).ToDictionaryAsync(v=>v.Id);
+ foreach(var item in request.Items){
+  if(!products.TryGetValue(item.ProductId,out var p))return Results.Conflict("Unavailable product.");
+  if(item.ProductVariantId.HasValue){
+   if(!variants.TryGetValue(item.ProductVariantId.Value,out var v)||v.ProductId!=p.Id||v.StockQuantity-v.ReservedQuantity<item.Quantity)
+    return Results.Conflict("Insufficient variant stock or unavailable variant.");
+  }else if(p.StockQuantity-p.ReservedQuantity<item.Quantity)return Results.Conflict("Insufficient stock.");
+ }
  var order=new ResellerOrder{ResellerId=key.ResellerId.Value};
- foreach(var item in request.Items){var p=products[item.ProductId];p.ReservedQuantity+=item.Quantity;order.Items.Add(new ResellerOrderItem{ProductId=p.Id,Quantity=item.Quantity,UnitPrice=p.ResellerPrice});}
+ foreach(var item in request.Items){
+  var p=products[item.ProductId];
+  var price=p.ResellerPrice;
+  if(item.ProductVariantId.HasValue){
+   var v=variants[item.ProductVariantId.Value];v.ReservedQuantity+=item.Quantity;price=v.ResellerPrice;
+  }else p.ReservedQuantity+=item.Quantity;
+  order.Items.Add(new ResellerOrderItem{ProductId=p.Id,ProductVariantId=item.ProductVariantId,Quantity=item.Quantity,UnitPrice=price});
+ }
  db.ResellerOrders.Add(order);await db.SaveChangesAsync();await tx.CommitAsync();return Results.Created($"/api/v1/orders/{order.Id}",new {order.Id,order.Status});
 });
 api.MapGet("/orders/{id:long}",async(long id,HttpContext http,AppDbContext db,ApiKeyService keys)=>{
  var key=await keys.Validate(http.Request.Headers["X-API-Key"],"orders:read");if(key==null)return Results.Unauthorized();var order=await db.ResellerOrders.AsNoTracking().Include(x=>x.Items).FirstOrDefaultAsync(x=>x.Id==id&&x.ResellerId==key.ResellerId);return order==null?Results.NotFound():Results.Ok(new {order.Id,order.Status,order.CreatedUtc,order.Items});
 });
 app.Run();
-record OrderLine(int ProductId,int Quantity);
+record OrderLine(int ProductId,int Quantity,int? ProductVariantId = null);
 record CreateOrder(List<OrderLine> Items);
