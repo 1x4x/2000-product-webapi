@@ -1,168 +1,93 @@
-<div align="center">
-
 # 📦 ProductAPI
 
-### Dark-mode inventory, reseller API & supplier purchasing
+**ASP.NET Core 8 · C# · EF Core · MySQL 8 · Dark-mode admin UI**
 
-**ASP.NET Core 8 · C# · Razor Pages · Entity Framework Core · MySQL 8**
+Inventory management, reseller API tokens, supplier purchasing and stock alerts in one application.
 
-![Status](https://img.shields.io/badge/status-development-orange) ![.NET](https://img.shields.io/badge/.NET-8-512BD4) ![Database](https://img.shields.io/badge/MySQL-8-4479A1) ![Dark Mode](https://img.shields.io/badge/UI-dark%20mode-0b1220)
+> ⚠️ **Development starter.** The project and tests have not yet been compiled or run in the authoring environment. Review the [testing guide](TESTING.md) and GitHub Actions results before deployment.
 
-Manage products, available stock, retailer and reseller pricing, supplier purchase orders, and API access in **one application**.
+## 🖥️ Visual previews
 
-</div>
+![Illustrative dashboard](docs/screenshots/dashboard.svg)
+![Illustrative product management](docs/screenshots/products.svg)
+![Illustrative purchase orders](docs/screenshots/purchase-orders.svg)
 
-> [!IMPORTANT]
-> **Development starter — not production-ready.** The application has not been compiled or integration-tested in the original creation environment. Screenshots are **illustrative SVG previews using sample data**, not captures of the running application.
-
-## 🖥️ Dashboard
-
-![Illustrative dark-mode inventory dashboard](docs/screenshots/dashboard.svg)
-
-The administrator uses `/admin` and partner companies use the versioned endpoints under `/api/v1` on the same website.
+*These are illustrative UI mockups with sample data, not screenshots from a running application.*
 
 ## ✨ Features
 
-| Module | Functionality |
+| Area | Capabilities |
 |---|---|
-| 📦 Products | Add and edit product records, SKU, descriptions, categories and supplier assignments |
-| 💰 Pricing | Separate supplier purchase cost, customer retail price and reseller price |
-| 📊 Inventory | On-hand inventory, reserved stock, manual stock adjustments and movement history |
-| ⚠️ Low-stock alerts | Reorder warning when available stock is at or below 20% of target by default |
-| 🏭 Suppliers | Manage Chinese supplier contacts, email and estimated lead times |
-| 🚢 Purchase orders | Create replenishment drafts, mark orders as placed, receive partial or complete shipments |
-| 🤝 Resellers | Register and activate/deactivate business partners and reserve stock for reseller orders |
-| 🔑 API keys | Cryptographic tokens with assigned permissions, expiry and revocation |
-| 🌙 Dark UI | Administration pages with shared dark-theme layout |
+| 📦 Products | SKUs, categories, suppliers, descriptions and active status |
+| 💰 Prices | Purchase, retail and reseller prices |
+| 📊 Stock | Available quantity = on-hand minus reserved |
+| ⚠️ Alerts | Default reorder warning at 20% of target inventory |
+| 🏭 Suppliers | Supplier details and lead times |
+| 🚢 Purchasing | Draft orders, placed orders, partial/final receiving |
+| 🤝 Resellers | Company accounts and inventory reservations |
+| 🔑 API access | Hashed tokens, scopes, expiry and revocation |
+| 🧪 Testing | xUnit unit tests and Docker/MySQL API integration tests |
 
-### Products and pricing
+## 🚢 Supplier replenishment
 
-![Illustrative product management](docs/screenshots/products.svg)
+1. Configure a supplier, target stock and reorder threshold for each product.
+2. A low-stock warning appears when available stock is at or below the threshold.
+3. Create a supplier purchase-order draft and review product quantities and unit costs.
+4. Mark the purchase order as placed after contacting the supplier.
+5. Record received quantities. The system updates stock and creates movement records.
 
-Products track `PurchasePrice`, `RetailPrice`, `ResellerPrice`, currency, `StockQuantity`, `ReservedQuantity`, `TargetStockQuantity`, `ReorderThresholdPercent` and `ReorderQuantity`.
+**Important:** Marking an order as placed does not send email, pay a supplier or place an external order.
 
-Purchase costs are limited to the administrator pages. Reseller API responses expose only reseller/retail prices.
+## 🧭 Admin routes
 
-### Purchase orders
+- `/admin` — Dashboard
+- `/admin/products` — Products and categories
+- `/admin/inventory` — Inventory adjustments
+- `/admin/suppliers` — Supplier management
+- `/admin/purchaseorders` — Purchase-order workflow
+- `/admin/resellers` — Reseller accounts
+- `/admin/tokens` — API tokens
 
-![Illustrative purchase-order management](docs/screenshots/purchase-orders.svg)
+## 🔌 Reseller API
 
-## 🔁 China supplier replenishment flow
-
-1. **Track available units:** `StockQuantity - ReservedQuantity`.
-2. **Detect low stock:** warn when `available × 100 <= target × thresholdPercent`. Default threshold is **20%**.
-3. **Create a purchase-order draft:** select the product's assigned supplier and propose the fixed reorder quantity or enough units to restore the target.
-4. **Review and place the order manually:** add or remove draft lines, review quantity and purchase price, and record the supplier order reference.
-5. **Receive goods:** enter partial or full received quantities. The database transaction increases the product's stock and writes an inventory movement record.
-6. **Close out:** when all items are received, the purchase order becomes `Received`.
-
-Possible states: `Draft`, `Ordered`, `PartiallyReceived`, `Received`, `Cancelled`.
-
-> Marking a purchase order "Ordered" changes only its internal status. The application does **not** send supplier emails, submit supplier purchases or process payments.
-
-## 🧭 Main admin routes
-
-| URL | Purpose |
-|---|---|
-| `/login` | Administrator sign in |
-| `/admin` | Dashboard and stock warnings |
-| `/admin/products` | Products, pricing, categories, reorder thresholds |
-| `/admin/inventory` | Inventory and adjustments |
-| `/admin/suppliers` | Supplier contacts and lead times |
-| `/admin/purchaseorders` | Low-stock replenishment and supplier POs |
-| `/admin/purchaseorders/{id}` | Review an order and record receipts |
-| `/admin/resellers` | Partner accounts |
-| `/admin/tokens` | API key issuance, expiry, scope and revocation |
-
-## 🔌 Reseller API endpoints
-
-| Method | Endpoint | Permission |
-|---|---|---|
-| GET | `/api/v1/products` | `products:read` |
-| GET | `/api/v1/products/{id}` | `products:read` |
-| GET | `/api/v1/categories` | `products:read` |
-| GET | `/api/v1/inventory` | `inventory:read` |
-| GET | `/api/v1/me` | `products:read` |
-| POST | `/api/v1/orders` | `orders:create` |
-| GET | `/api/v1/orders/{id}` | `orders:read` |
-
-Example request:
-
-```bash
-curl -H "X-API-Key: pa_YOUR_TOKEN" https://localhost:7041/api/v1/products
+```http
+GET /api/v1/products
+X-API-Key: pa_YOUR_TOKEN
 ```
 
-Keep reseller keys on the reseller **server**, never in public browser JavaScript. The API checks token hash, scope, expiry, revocation and reseller activation.
+Other routes: `GET /api/v1/products/{id}`, `GET /api/v1/categories`, `GET /api/v1/inventory`, `GET /api/v1/me`, `POST /api/v1/orders`, and `GET /api/v1/orders/{id}`.
 
-## 🚀 Development setup
+Purchase prices are never returned from the reseller product API.
 
-**Requirements:** .NET 8 SDK, MySQL 8 and dotnet-ef 8.0.8.
+## ⚙️ Development setup
 
-1. Open `ProductAPI.sln` in Visual Studio, or open a terminal at the repository root.
-2. Move to the project directory: `cd ProductAPI`.
-3. Configure local .NET user secrets (do not commit real credentials):
+Install .NET 8 SDK and MySQL 8. Configure your empty `walteradmin` database via **user secrets**, not tracked files:
 
 ```bash
+cd ProductAPI
 dotnet user-secrets init
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=127.0.0.1;Database=walteradmin;Port=3306;User ID=YOUR_DB_USER;Password=YOUR_DB_PASSWORD;"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=127.0.0.1;Database=walteradmin;Port=3306;User ID=YOUR_USER;Password=YOUR_PASSWORD;"
 dotnet user-secrets set "Admin:Username" "admin"
-dotnet user-secrets set "Admin:PasswordSha256" "YOUR_64_CHARACTER_SHA256_HEX_DIGEST"
-```
-
-4. Generate the schema for a new **empty** `walteradmin` database:
-
-```bash
+dotnet user-secrets set "Admin:PasswordSha256" "YOUR_SHA256_PASSWORD_DIGEST"
 dotnet tool install --global dotnet-ef --version 8.0.8
 dotnet ef migrations add InitialCreate
 dotnet ef database update
 dotnet run
 ```
 
-5. Open the printed HTTPS URL and go to `/login` or `/admin`.
+Do not use the SHA-256 admin password scheme for production; migrate to ASP.NET Core Identity with a password KDF and MFA. Migrations are not included in the repository yet. Preserve existing migration history when upgrading an installed database.
 
-**Migrations are not bundled.** If you applied migrations from an older starter, retain the previous migrations and generate a new upgrade migration instead of repeating `InitialCreate`. Back up the database before migrating.
+## 🧪 Tests
 
-## 🗂️ Repository structure
-
-```text
-ProductAPI.sln
-README.md
-docs/screenshots/
-ProductAPI/
-  Data/AppDbContext.cs
-  Models/Entities.cs
-  Pages/Admin/
-  Pages/Shared/
-  Services/ApiKeyService.cs
-  Program.cs
-  appsettings.json
-  ProductAPI.csproj
+```bash
+dotnet test ProductAPI.Tests.Unit/ProductAPI.Tests.Unit.csproj
+dotnet test ProductAPI.Tests.Integration/ProductAPI.Tests.Integration.csproj
 ```
 
-## 🛡️ Security and known limitations
+Integration tests use a disposable MySQL 8 container and require Docker. See **[TESTING.md](TESTING.md)** for coverage, CI, and limitations.
 
-- **Do not deploy as-is.** Compile, exercise the migration on a disposable MySQL database and review the app before exposing it publicly.
-- Replace the starter SHA-256 administrator password check with ASP.NET Core Identity or a suitable password hash scheme, and add MFA.
-- Use HTTPS, strict access controls, a least-privilege database user, backups, and secure server-side secret storage.
-- Admin login needs improved throttling/account protection; token restrictions still need IP allowlists and stronger audit logging.
-- Product editing currently uses an existing numeric ID rather than a pre-populated edit dialog.
-- Supplier email dispatch, payment, formal approvals and PDF purchase orders are not implemented.
-- Harden receipt idempotency, cancellation/reservation handling, concurrency and cross-currency totals before production.
-- The user-provided MySQL root password is intentionally **not included** in this public repository.
+## 🔐 Production checklist
 
-## 🧪 Acceptance checklist
+Before production: compile and run the full suite, review database migrations, use HTTPS, move secrets into secure configuration, replace admin password hashing, add MFA and rate limits for login, test parallel orders and receipt idempotency, and review reseller authorization and audit logging.
 
-- [ ] `dotnet build` succeeds
-- [ ] Generate and apply EF Core migrations to an empty `walteradmin` database
-- [ ] Admin sign-in and sign-out work via HTTPS
-- [ ] Add and edit products, prices, categories and suppliers
-- [ ] Show warning at exactly 20% available stock
-- [ ] Create a low-stock reorder draft for the assigned supplier
-- [ ] Record partial and final receipts without duplicate stock adjustments
-- [ ] Reject expired/revoked API keys
-- [ ] Prevent a reseller from seeing supplier costs or another reseller's orders
-- [ ] Test concurrent orders and inventory updates
-
----
-
-**ProductAPI** · Inventory visibility → Supplier replenishment → Reseller fulfillment
+**Never commit the MySQL root password or reseller tokens to this public repository.**
